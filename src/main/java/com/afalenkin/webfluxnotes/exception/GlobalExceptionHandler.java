@@ -9,6 +9,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RequestPredicates;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -19,6 +20,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 import java.util.Optional;
+
+import static org.springframework.boot.web.error.ErrorAttributeOptions.*;
 
 /**
  * @author Alenkin Andrew
@@ -54,10 +57,17 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
      * Сформировать ответ для запроса, при обработке которого возникло исключение
      */
     private Mono<ServerResponse> formatErrorResponse(ServerRequest request) {
+
+        String query = request.uri().getQuery();
+
+        // Обработка параметра trace в запросе
+        ErrorAttributeOptions errorAttributeOptions = isTraceEnabled(query)
+                ? of(Include.STACK_TRACE)
+                : defaults();
+
         // запрос, при обработке которого возникло исключение, уже содержит в себе его детали.
         // Они содержатся в нем в виде мапы
-        Map<String, Object> errorAttributes = getErrorAttributes(request,
-                ErrorAttributeOptions.of(ErrorAttributeOptions.Include.STACK_TRACE));
+        Map<String, Object> errorAttributes = getErrorAttributes(request, errorAttributeOptions);
 
         // статус ответа можно получить из деталей, полученных из запроса. Если его там нет - вернем дефолтное значение
         int status = (int) Optional.ofNullable(errorAttributes.get("status")).orElse(500);
@@ -67,5 +77,9 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(errorAttributes));
 
+    }
+
+    private boolean isTraceEnabled(String query) {
+        return !ObjectUtils.isEmpty(query) && query.contains("trace=true");
     }
 }

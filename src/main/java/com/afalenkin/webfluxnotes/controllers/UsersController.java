@@ -1,7 +1,6 @@
 package com.afalenkin.webfluxnotes.controllers;
 
 import com.afalenkin.webfluxnotes.domain.User;
-import com.afalenkin.webfluxnotes.repository.UsersRepository;
 import com.afalenkin.webfluxnotes.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +43,9 @@ public class UsersController {
     @GetMapping(path = "/{id}")
     public Mono<User> getById(@PathVariable(value = "id", required = true) int id) {
         return userService.getById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ooops, something went wrong..."))
+                )
                 .log();
     }
 }
