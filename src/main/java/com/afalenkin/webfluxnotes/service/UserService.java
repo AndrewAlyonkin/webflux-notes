@@ -6,8 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
-
-import java.util.List;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Alenkin Andrew
@@ -17,9 +16,13 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
-    private final UsersRepository usersRepository;
+    private final UsersRepository repository;
 
     public Flux<User> getAll() {
-        return usersRepository.findAll();
+        return repository.findAll();
+    }
+
+    public Mono<User> getById(int id) {
+        return repository.findById(id);
     }
 }
