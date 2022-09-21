@@ -22,6 +22,10 @@ public class UsersController {
 
     private final UserService userService;
 
+    /**
+     * Мы не вызываем вручную метод subscribe а просто отдаем Flux в методе контроллера.
+     * Спринг за нас создаст подписку и реактивно вернет результаты запроса из метода контроллера.
+     */
     @GetMapping
     public Flux<User> getAllUsers() {
         return userService.getAll();
