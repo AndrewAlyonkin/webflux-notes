@@ -4,7 +4,6 @@ spring:
     username: root
     password: root
 
-# Ќастройка уровн€ логировани€ здесь не сработает, нужно настраивать его в logback-test.xml
 logging:
   level:
     org:

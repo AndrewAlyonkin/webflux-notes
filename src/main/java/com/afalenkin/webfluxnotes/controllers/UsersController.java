@@ -37,6 +37,7 @@ public class UsersController {
      * Спринг за нас создаст подписку и реактивно вернет результаты запроса из метода контроллера.
      */
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public Flux<User> getAllUsers() {
         return userService.getAll();
     }
@@ -48,6 +49,7 @@ public class UsersController {
      * создаст новый моно который содержит ошибку и отдаст его.
      */
     @GetMapping(path = "/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public Mono<User> getById(@PathVariable(value = "id", required = true) int id) {
         return userService.getById(id)
                 .switchIfEmpty(Mono.error(

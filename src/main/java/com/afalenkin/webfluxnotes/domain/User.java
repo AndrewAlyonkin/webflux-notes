@@ -26,7 +26,12 @@ public class User {
     @Id
     private Integer id;
 
-    @NotNull
-    @NotEmpty
+    /**
+     * Ко всем аннотациям валидации обязательно нужно добавлять сообщение.
+     * Стандартные сообщения хранятся в файлах и при каждой валидации оттуда вычитываются - это
+     * является блокирующей IO операцией, что не допустимо при работе в реактивном стиле.
+     */
+    @NotNull(message = "Should not be null!")
+    @NotEmpty(message = "Name should not be blank")
     private String name;
 }

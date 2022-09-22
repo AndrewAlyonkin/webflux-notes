@@ -37,6 +37,7 @@ public class UserService {
     }
 
     public Mono<Void> delete(int id) {
-        return getById(id).flatMap(repository::delete);
+        return getById(id)
+                .flatMap(repository::delete);
     }
 }
