@@ -7,9 +7,4 @@ spring:
 logging:
   level:
     org:
-      springframework:
-        r2dbc: debug
-
-server:
-  error:
-    include-stacktrace: ON_PARAM
+      springframework: INFO
