@@ -2,6 +2,10 @@ package com.afalenkin.webfluxnotes.controllers;
 
 import com.afalenkin.webfluxnotes.domain.User;
 import com.afalenkin.webfluxnotes.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,6 +34,11 @@ import java.util.List;
 @RequestMapping("users")
 @Slf4j
 @RequiredArgsConstructor
+@SecurityScheme(
+        name = "Basic Authentication",
+        type = SecuritySchemeType.HTTP,
+        scheme = "basic"
+)
 public class UsersController {
 
     private final UserService userService;
@@ -41,6 +50,9 @@ public class UsersController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "get all users from storage",
+            tags = {"users"},
+            security = @SecurityRequirement(name = "Basic Authentication"))
     public Flux<User> getAllUsers() {
         return userService.getAll();
     }
@@ -53,6 +65,7 @@ public class UsersController {
      */
     @GetMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(tags = {"users"}, security = @SecurityRequirement(name = "Basic Authentication"))
     public Mono<User> getById(@PathVariable(value = "id", required = true) int id) {
         return userService.getById(id)
                 .switchIfEmpty(Mono.error(
@@ -63,6 +76,7 @@ public class UsersController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(tags = {"users"}, security = @SecurityRequirement(name = "Basic Authentication"))
     public Mono<User> save(@Valid @RequestBody User user) {
         if (user.getId() != null) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Object should have nullable ID."));
@@ -72,12 +86,14 @@ public class UsersController {
 
     @PostMapping(path = "/batch")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(tags = {"users"}, security = @SecurityRequirement(name = "Basic Authentication"))
     public Flux<User> batchSave(@RequestBody List<User> users) {
         return userService.save(users);
     }
 
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(tags = {"users"}, security = @SecurityRequirement(name = "Basic Authentication"))
     public Mono<Void> update(@Valid @RequestBody User user) {
         if (user.getId() == null) {
             return Mono.error(
@@ -88,6 +104,7 @@ public class UsersController {
 
     @DeleteMapping(path = "/{id}")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(tags = {"users"}, security = @SecurityRequirement(name = "Basic Authentication"))
     public Mono<Void> delete(@PathVariable(value = "id", required = true) int id) {
         return userService.delete(id);
     }
