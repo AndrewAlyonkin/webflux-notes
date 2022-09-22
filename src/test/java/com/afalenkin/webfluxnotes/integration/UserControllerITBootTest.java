@@ -1,11 +1,11 @@
 package com.afalenkin.webfluxnotes.integration;
 
 import com.afalenkin.webfluxnotes.domain.User;
-import com.afalenkin.webfluxnotes.exception.CustomAttributes;
 import com.afalenkin.webfluxnotes.repository.UsersRepository;
-import com.afalenkin.webfluxnotes.service.UserService;
+import com.afalenkin.webfluxnotes.util.WebTestClientUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,11 +14,10 @@ import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -45,15 +44,26 @@ import static com.afalenkin.webfluxnotes.util.UserData.newUser;
 @AutoConfigureWebTestClient
 class UserControllerITBootTest {
 
+    @Autowired
+    private WebTestClientUtils testClientUtils;
+
     @MockBean
     private UsersRepository repository;
 
-    @Autowired
-    private WebTestClient testClient;
+    private WebTestClient userClient;
+    private WebTestClient adminClient;
+    private WebTestClient gangsterClient;
 
     @BeforeAll
     static void blockHoundSetup() {
         BlockHound.install();
+    }
+
+    @BeforeEach
+    void securitySetUp() {
+        userClient = testClientUtils.authenticateClient("dog", "root");
+        adminClient = testClientUtils.authenticateClient("god", "root");
+        gangsterClient = testClientUtils.authenticateClient("x", "y");
     }
 
     @Test
@@ -78,7 +88,7 @@ class UserControllerITBootTest {
         User user = createdUser();
         BDDMockito.when(repository.findAll()).thenReturn(Flux.just(user));
 
-        testClient
+        adminClient
                 .get()
                 .uri("/users")
                 .exchange()
@@ -89,12 +99,23 @@ class UserControllerITBootTest {
     }
 
     @Test
+    void getAllGangsterTest() {
+        gangsterClient
+                .get()
+                .uri("/users")
+                .exchange()
+                .expectStatus().is4xxClientError()
+                .expectBody();
+    }
+
+    @Test
     @DisplayName("getAll should return a flux of users")
+//    @WithMockUser("god")         лучше использовать такой способ
     void getAllListTest() {
         User user = createdUser();
         BDDMockito.when(repository.findAll()).thenReturn(Flux.just(user));
 
-        testClient
+        adminClient
                 .get()
                 .uri("/users")
                 .exchange()
@@ -110,7 +131,7 @@ class UserControllerITBootTest {
         User user = createdUser();
         BDDMockito.when(repository.findById(ArgumentMatchers.eq(1))).thenReturn(Mono.just(user));
 
-        testClient
+        userClient
                 .get()
                 .uri("/users/{id}", 1)
                 .exchange()
@@ -124,7 +145,7 @@ class UserControllerITBootTest {
     void getByIdNotFoundTest() {
         BDDMockito.when(repository.findById(ArgumentMatchers.anyInt())).thenReturn(Mono.empty());
 
-        testClient
+        userClient
                 .get()
                 .uri("/users/{id}", 2)
                 .exchange()
@@ -139,7 +160,7 @@ class UserControllerITBootTest {
     void saveTest() {
         BDDMockito.when(repository.save(newUser())).thenReturn(Mono.just(createdUser()));
 
-        testClient
+        adminClient
                 .post()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -153,7 +174,7 @@ class UserControllerITBootTest {
     @Test
     @DisplayName("saving user with ID should be failed")
     void saveWithIdTest() {
-        testClient
+        userClient
                 .post()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -168,7 +189,7 @@ class UserControllerITBootTest {
 
         User invalid = newUser().withName("");
 
-        testClient
+        adminClient
                 .post()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -186,7 +207,7 @@ class UserControllerITBootTest {
         BDDMockito.when(repository.findById(ArgumentMatchers.eq(1))).thenReturn(Mono.just(createdUser()));
         BDDMockito.when(repository.delete(ArgumentMatchers.any())).thenReturn(Mono.empty());
 
-        testClient
+        adminClient
                 .delete()
                 .uri("/users/{id}", 1)
                 .exchange()
@@ -199,7 +220,7 @@ class UserControllerITBootTest {
         BDDMockito.when(repository.findById(ArgumentMatchers.eq(1))).thenReturn(Mono.just(createdUser()));
         BDDMockito.when(repository.save(ArgumentMatchers.any(User.class))).thenReturn(Mono.just(createdUser()));
 
-        testClient
+        adminClient
                 .put()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -213,7 +234,7 @@ class UserControllerITBootTest {
     void updateWitNullableIdTest() {
         BDDMockito.verify(repository, Mockito.never()).save(ArgumentMatchers.any());
 
-        testClient
+        adminClient
                 .put()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -227,7 +248,7 @@ class UserControllerITBootTest {
     void updateInvalidTest() {
         BDDMockito.verify(repository, Mockito.never()).save(ArgumentMatchers.any());
 
-        testClient
+        adminClient
                 .put()
                 .uri("/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -242,7 +263,7 @@ class UserControllerITBootTest {
         BDDMockito.when(repository.saveAll(List.of(newUser(), newUser())))
                 .thenReturn(Flux.just(user, user));
 
-        testClient
+        adminClient
                 .post()
                 .uri("/users/batch")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -260,7 +281,7 @@ class UserControllerITBootTest {
         BDDMockito.when(repository.saveAll(List.of(newUser(), newUser())))
                 .thenReturn(Flux.just(user, user.withName("")));
 
-        testClient
+        adminClient
                 .post()
                 .uri("/users/batch")
                 .contentType(MediaType.APPLICATION_JSON)
