@@ -14,7 +14,11 @@ public class WebfluxNotesApplication {
      * предусматривать отдельные планировщики, которые будут выполнять такие операции.
      */
     static {
-        BlockHound.install();
+        BlockHound.install(
+                // Для определенных операций таким образом можно разрешить блокирующие вызовы
+                builder ->
+                        builder.allowBlockingCallsInside("java.util.UUID", "randomUUID")
+        );
     }
 
     public static void main(String[] args) {

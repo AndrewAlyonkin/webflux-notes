@@ -13,7 +13,9 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -36,17 +38,12 @@ import static com.afalenkin.webfluxnotes.util.UserData.createdUser;
 import static com.afalenkin.webfluxnotes.util.UserData.newUser;
 
 /**
- * @author Alenkin Andrew
- * oxqq@ya.ru
- * <p>
- * Использование @WebFluxTest отключает основную конфигурацию, будет сконфигурирован только тот контекст,
- * который необходим для работы WebFlux.
- * При этом не происходит сканирование пакетов, нужные для теста классы нужно импортировать.
+ * Запуск тестов в полном контексте спринга
  */
 @ExtendWith(SpringExtension.class)
-@WebFluxTest
-@Import({UserService.class, CustomAttributes.class})
-class UserControllerITTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+class UserControllerITBootTest {
 
     @MockBean
     private UsersRepository repository;

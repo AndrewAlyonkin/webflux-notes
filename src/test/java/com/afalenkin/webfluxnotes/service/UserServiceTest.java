@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.blockhound.BlockHound;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -156,4 +158,28 @@ class UserServiceTest {
                 .expectSubscription()
                 .verifyComplete();
     }
+
+    @Test
+    void saveBatchTest() {
+        BDDMockito.when(repository.saveAll(List.of(newUser(), newUser())))
+                .thenReturn(Flux.just(createdUser(), createdUser()));
+
+        StepVerifier.create(userService.save(List.of(newUser(), newUser())))
+                .expectSubscription()
+                .expectNext(createdUser(), createdUser())
+                .verifyComplete();
+    }
+
+    @Test
+    void saveBatchFailedTest() {
+        BDDMockito.when(repository.saveAll(List.of(newUser(), newUser())))
+                .thenReturn(Flux.just(createdUser(), createdUser().withName("")));
+
+        StepVerifier.create(userService.save(List.of(newUser(), newUser())))
+                .expectSubscription()
+                .expectNext(createdUser())
+                .expectError(ResponseStatusException.class)
+                .verify();
+    }
+
 }

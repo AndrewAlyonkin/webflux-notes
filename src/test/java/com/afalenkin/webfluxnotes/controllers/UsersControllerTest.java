@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -147,5 +148,16 @@ class UsersControllerTest {
                 .expectSubscription()
                 .expectError(ResponseStatusException.class)
                 .verify();
+    }
+
+    @Test
+    void saveBatchTest() {
+        BDDMockito.when(service.save(List.of(newUser(), newUser())))
+                .thenReturn(Flux.just(createdUser(), createdUser()));
+
+        StepVerifier.create(controller.batchSave(List.of(newUser(), newUser())))
+                .expectSubscription()
+                .expectNext(createdUser(), createdUser())
+                .verifyComplete();
     }
 }

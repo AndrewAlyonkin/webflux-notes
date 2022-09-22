@@ -19,6 +19,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * @author Alenkin Andrew
@@ -65,6 +66,12 @@ public class UsersController {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Object should have nullable ID."));
         }
         return userService.save(user);
+    }
+
+    @PostMapping(path = "/batch")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Flux<User> batchSave(@RequestBody List<User> users) {
+        return userService.save(users);
     }
 
     @PutMapping
