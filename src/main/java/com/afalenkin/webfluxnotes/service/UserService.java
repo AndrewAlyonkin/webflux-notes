@@ -25,4 +25,18 @@ public class UserService {
     public Mono<User> getById(int id) {
         return repository.findById(id);
     }
+
+    public Mono<User> save(User newUser) {
+        return repository.save(newUser);
+    }
+
+    public Mono<Void> update(User updatedUser) {
+        return getById(updatedUser.getId())
+                .flatMap(userFromDb -> repository.save(updatedUser))
+                .then();
+    }
+
+    public Mono<Void> delete(int id) {
+        return getById(id).flatMap(repository::delete);
+    }
 }
